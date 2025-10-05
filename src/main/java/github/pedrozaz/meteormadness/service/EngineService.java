@@ -85,8 +85,14 @@ public class EngineService {
         boolean isPotentiallyHazardous = asteroid.isPotentiallyHazardousAsteroid();
         double averageDiameterMeters = (asteroid.getEstimatedDiameter().get("meters").getMin() + asteroid.getEstimatedDiameter().get("meters").getMax()) / 2.0;
         double velocityKMS = Double.parseDouble(closestEarthApproach.getRelativeVelocity().get("kilometers_per_second"));
-        double megatons = calculateImpactEnergy(averageDiameterMeters, velocityKMS);
+
+        double[] energyCalculations = calculateImpactEnergy(averageDiameterMeters, velocityKMS);
+        double megatons = energyCalculations[0];
+        double energyJoules = energyCalculations[1];
+
         double blastRadius = calculateBlastRadius(megatons);
+        double craterDiameter = calculateCraterDiameter(averageDiameterMeters);
+        double seismicMagnitude = calculateSeismicMagnitude(energyJoules);
 
         if (minDistance <= distanceLimitKM) {
             log.warn("IMPACT RISK DETECTED for asteroid {}! Distance: {} km, Energy: {} Megatons", asteroid.getId(), minDistance, megatons);
@@ -100,6 +106,8 @@ public class EngineService {
                     .isPotentiallyHazardous(isPotentiallyHazardous)
                     .estimatedDiameterMeters(averageDiameterMeters)
                     .blastRadiusKm(blastRadius)
+                    .craterDiameterKm(craterDiameter)
+                    .seismicMagnitude(seismicMagnitude)
                     .build();
         }
 
@@ -113,7 +121,7 @@ public class EngineService {
                 .build();
     }
 
-    public Flux<SimulationResponseDTO> analyzeHazardousForDateRange(LocalDate startDate, LocalDate endDate) {
+    public Flux<SimulationResponseDTO> analyzeHazardousForDateRange(LocalDate startDate, LocalDate endDate, double impactLimitKm) {
         return neoApiService.getAllAsteroidsForLongDateRange(startDate, endDate)
                 .filter(FeedDTO::isPotentiallyHazardous)
                 .map(FeedDTO::getId)
@@ -125,20 +133,22 @@ public class EngineService {
                 .map(asteroid -> {
                     log.info("Processing hazardous asteroid: {}", asteroid.getName());
                     List<PositionDTO> trajectory = generateOrbitalTrajectory(asteroid.getOrbitalData());
-                    ImpactDTO impact = analyzeImpact(asteroid, 7500000);
+                    ImpactDTO impact = analyzeImpact(asteroid, impactLimitKm);
                     return new SimulationResponseDTO(asteroid.getId(), asteroid.getName() , trajectory, impact);
-                });
+                })
+                .filter(simulation -> simulation.getImpactData().isHasImpactRisk());
     }
 
-    private double calculateImpactEnergy(double diameterMeters, double velocity) {
-        double radius = diameterMeters / 2;
+    private double[] calculateImpactEnergy(double diameterMeters, double velocity) {
+        double radius = diameterMeters / 2.0;
         double volume = (4.0/3.0) * Math.PI * Math.pow(radius, 3);
         double mass = volume * ASTEROID_DENSITY_KG_M3;
 
-        double velocityMs = velocity * 1000;
+        double velocityMs = velocity * 1000.0;
         double energyJoules = 0.5 * mass * Math.pow(velocityMs, 2);
 
-        return energyJoules / JOULES_PER_MEGATON_TNT;
+        double megatons = energyJoules / JOULES_PER_MEGATON_TNT;
+        return new double[]{megatons, energyJoules};
     }
 
     private double solveKepler(double meanAnomalyM, double eccentricityE) {
@@ -151,9 +161,21 @@ public class EngineService {
     }
 
     private double calculateBlastRadius(double megatons) {
-        if (megatons <- 0) {
+        if (megatons <= 0) {
             return 0;
         }
         return 1.1 * Math.pow(megatons, 1.0/3.0);
+    }
+
+    private double calculateCraterDiameter(double diameters) {
+        double factor = 20.0;
+        return (diameters * factor) / 1000;
+    }
+
+    private double calculateSeismicMagnitude(double energyJoules) {
+        if (energyJoules <= 0) return 0;
+        double seismicEfficiency = 1e-4;
+        double seismicEnergy = energyJoules * seismicEfficiency;
+        return (2.0/3.0) * (Math.log10(seismicEnergy)) - 2.9;
     }
 }

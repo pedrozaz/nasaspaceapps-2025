@@ -34,11 +34,12 @@ public class SimulationController {
                 });
     }
 
-    @GetMapping("/feed")
+    @GetMapping("/by-range")
     public Flux<SimulationResponseDTO> getHazardousByRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return engineService.analyzeHazardousForDateRange(startDate, endDate);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "7500000") double impactLimitKm) {
+        return engineService.analyzeHazardousForDateRange(startDate, endDate, impactLimitKm);
     }
 
     @GetMapping("/debug/{id}")

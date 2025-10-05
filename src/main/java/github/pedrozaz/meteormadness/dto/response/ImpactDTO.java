@@ -13,4 +13,6 @@ public class ImpactDTO {
     private boolean isPotentiallyHazardous;
     private double estimatedDiameterMeters;
     private double blastRadiusKm;
+    private double craterDiameterKm;
+    private double seismicMagnitude;
 }
