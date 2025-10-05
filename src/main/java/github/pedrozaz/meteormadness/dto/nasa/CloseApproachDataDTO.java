@@ -11,4 +11,5 @@ public class CloseApproachDataDTO {
     @JsonProperty("close_approach_date") private String closeApproachDate;
     @JsonProperty("relative_velocity") private Map<String, String> relativeVelocity;
     @JsonProperty("miss_distance") private Map<String, String> missDistance;
+    @JsonProperty("orbiting_body") private String orbitingBody;
 }

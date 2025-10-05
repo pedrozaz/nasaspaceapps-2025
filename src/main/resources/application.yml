@@ -3,3 +3,6 @@ spring:
     name: Meteor Madness
   config:
     import: optional:application-secrets.yml
+  mvc:
+    async:
+      request-timeout: 120000

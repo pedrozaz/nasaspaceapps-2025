@@ -7,6 +7,8 @@ import java.util.List;
 
 @Data @AllArgsConstructor
 public class SimulationResponseDTO {
+    String id;
+    String name;
     private List<PositionDTO> orbitalTrajectory;
     private ImpactDTO impactData;
 }
