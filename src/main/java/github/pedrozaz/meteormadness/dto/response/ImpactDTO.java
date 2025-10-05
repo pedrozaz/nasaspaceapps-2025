@@ -12,4 +12,5 @@ public class ImpactDTO {
     private double impactMegatons;
     private boolean isPotentiallyHazardous;
     private double estimatedDiameterMeters;
+    private double blastRadiusKm;
 }

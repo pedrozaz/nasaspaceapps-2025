@@ -86,6 +86,7 @@ public class EngineService {
         double averageDiameterMeters = (asteroid.getEstimatedDiameter().get("meters").getMin() + asteroid.getEstimatedDiameter().get("meters").getMax()) / 2.0;
         double velocityKMS = Double.parseDouble(closestEarthApproach.getRelativeVelocity().get("kilometers_per_second"));
         double megatons = calculateImpactEnergy(averageDiameterMeters, velocityKMS);
+        double blastRadius = calculateBlastRadius(megatons);
 
         if (minDistance <= distanceLimitKM) {
             log.warn("IMPACT RISK DETECTED for asteroid {}! Distance: {} km, Energy: {} Megatons", asteroid.getId(), minDistance, megatons);
@@ -98,6 +99,7 @@ public class EngineService {
                     .impactMegatons(megatons)
                     .isPotentiallyHazardous(isPotentiallyHazardous)
                     .estimatedDiameterMeters(averageDiameterMeters)
+                    .blastRadiusKm(blastRadius)
                     .build();
         }
 
@@ -146,5 +148,12 @@ public class EngineService {
             E -= delta;
         }
         return E;
+    }
+
+    private double calculateBlastRadius(double megatons) {
+        if (megatons <- 0) {
+            return 0;
+        }
+        return 1.1 * Math.pow(megatons, 1.0/3.0);
     }
 }
