@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: Meteor Madness
+  config:
+    import: optional:application-secrets.yml
